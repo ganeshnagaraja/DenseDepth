@@ -39,7 +39,7 @@ class Decoder(nn.Module):
 
 class Encoder(nn.Module):
     def __init__(self):
-        super(Encoder, self).__init__()       
+        super(Encoder, self).__init__()
         import torchvision.models as models
         self.original_model = models.densenet161( pretrained=True )
 

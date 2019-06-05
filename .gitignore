@@ -1,7 +1,12 @@
-/__pycache__
+__pycache__
 /models
 /*.h5
 /*.zip
 /.vscode
 *.jpg
 *.obj
+
+PyTorch/data/
+PyTorch/runs/
+PyTorch/config.yaml
+
