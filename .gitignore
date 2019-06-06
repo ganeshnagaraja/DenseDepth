@@ -8,5 +8,7 @@ __pycache__
 
 PyTorch/data/
 PyTorch/runs/
+PyTorch/logs/
+PyTorch/dataloader.py
 PyTorch/config.yaml
 

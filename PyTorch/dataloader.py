@@ -53,7 +53,7 @@ class DepthDataset(Dataset):
                  max_depth=3.0,
                  concat_depth=True,
                  model='rednet',
-                 normalize_depth=True
+                 type_of_data_loaded='train'
                  ):
 
         super().__init__()
@@ -68,7 +68,7 @@ class DepthDataset(Dataset):
         self.max_depth = max_depth
         self.concat_depth = concat_depth
         self.model = model
-        self.normalize_depth = normalize_depth
+        self.type_of_data_loaded = type_of_data_loaded
 
         # Create list of filenames
         self._datalist_normals = []  # variable containing list of all surface normals ground truth filenames
@@ -106,9 +106,6 @@ class DepthDataset(Dataset):
             depth_with_mask = _label.copy()
             depth_with_mask[mask] = 0.0
 
-            if self.normalize_depth:
-                _label = utils.normalize_depth(_label, self.min_depth, self.max_depth)
-                depth_with_mask = utils.normalize_depth(depth_with_mask, self.min_depth, self.max_depth)
 
         # Apply image augmentations and convert to Tensor
         if self.transform:
@@ -131,6 +128,10 @@ class DepthDataset(Dataset):
         _img_tensor = torch.from_numpy(_img.transpose(2,0,1))
         if self.labels_dir:
             _label_tensor = torch.from_numpy(_label)
+            if self.type_of_data_loaded == 'train':
+                _label_tensor = _label_tensor.float() * 1000
+            elif self.type_of_data_loaded == 'test':
+                _label_tensor = _label_tensor.float() / 1000
         else:
             _label_tensor = torch.zeros((1, _img_tensor.shape[1], _img_tensor.shape[2]), dtype=torch.float32)
 

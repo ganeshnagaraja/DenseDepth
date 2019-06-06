@@ -8,20 +8,10 @@ import torch.nn.utils as utils
 import torchvision.utils as vutils
 from tensorboardX import SummaryWriter
 
-import oyaml
-from attrdict import AttrDict
-from imgaug import augmenters as iaa
-from termcolor import colored
-
 from model import Model
 from loss import ssim
 from data import getTrainingTestingData
 from utils import AverageMeter, DepthNorm, colorize
-
-import dataloader
-from torch.utils.data import DataLoader
-
-
 
 def main():
     # Arguments
@@ -29,15 +19,7 @@ def main():
     parser.add_argument('--epochs', default=20, type=int, help='number of total epochs to run')
     parser.add_argument('--lr', '--learning-rate', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--bs', default=4, type=int, help='batch size')
-    parser.add_argument('--c', '--configfile')
     args = parser.parse_args()
-
-    CONFIG_FILE_PATH = args.c
-    with open(CONFIG_FILE_PATH) as fd:
-        config_yaml = oyaml.load(fd)  # Returns an ordered dict. Used for printing
-
-    config = AttrDict(config_yaml)
-    print(colored('Config being used for training:\n{}\n\n'.format(oyaml.dump(config_yaml)), 'green'))
 
     # Create model
     model = Model().cuda()
@@ -49,66 +31,7 @@ def main():
     prefix = 'densenet_' + str(batch_size)
 
     # Load data
-    augs_train = iaa.Sequential([
-    # Geometric Augs
-    iaa.Resize({
-        "height": config.train.imgHeight,
-        "width": config.train.imgWidth
-    }, interpolation='nearest')])
-
-    input_only = ["gaus-blur", "gaus-noise"]
-    db_train_list = []
-    for dataset in config.train.datasetsTrain:
-        db = dataloader.DepthDataset(normals=dataset.normals,
-                                    variant_masks=dataset.variant_masks,
-                                    json=dataset.json,
-                                    labels=dataset.labels,
-                                    transform=augs_train,
-                                    input_only=input_only,
-                                    min_depth=config.train.min_depth,
-                                    max_depth=config.train.max_depth,
-                                    concat_depth=config.train.concat_depth,
-                                    model=config.train.model,
-                                    normalize_depth=config.train.normalize_depth)
-        train_size = int(config.train.percentageDataForTraining * len(db))
-        db = torch.utils.data.Subset(db, range(train_size))
-        db_train_list.append(db)
-    db_train = torch.utils.data.ConcatDataset(db_train_list)
-
-    db_val_list = []
-    for dataset in config.train.datasetsVal:
-        if dataset.normals:
-            db = dataloader.DepthDataset(normals=dataset.normals,
-                                        variant_masks=dataset.variant_masks,
-                                        json=dataset.json,
-                                        labels=dataset.labels,
-                                        transform=augs_train,
-                                        input_only=None,
-                                        min_depth=config.train.min_depth,
-                                        max_depth=config.train.max_depth,
-                                        concat_depth=config.train.concat_depth,
-                                        model=config.train.model,
-                                        normalize_depth=config.train.normalize_depth)
-            train_size = int(config.train.percentageDataForValidation * len(db))
-            db = torch.utils.data.Subset(db, range(train_size))
-            db_val_list.append(db)
-    if db_val_list:
-        db_val = torch.utils.data.ConcatDataset(db_val_list)
-
-    train_loader = DataLoader(db_train,
-                             batch_size=batch_size,
-                             shuffle=True,
-                             num_workers=6,
-                             drop_last=True,
-                             pin_memory=True)
-
-    test_loader = DataLoader(db_val,
-                                  batch_size=batch_size,
-                                  shuffle=True,
-                                  num_workers=6,
-                                  drop_last=True)
-
-    # train_loader, test_loader = getTrainingTestingData(batch_size=batch_size)
+    train_loader, test_loader = getTrainingTestingData(batch_size=batch_size)
 
     # Logging
     writer = SummaryWriter(comment='{}-lr{}-e{}-bs{}'.format(prefix, args.lr, args.epochs, args.bs), flush_secs=30)
@@ -169,7 +92,7 @@ def main():
                 # Log to tensorboard
                 writer.add_scalar('Train/Loss', losses.val, niter)
 
-            if i % 300 == 0:
+            if i % 50 == 0:
                 LogProgress(model, writer, test_loader, niter)
 
         # Record epoch's intermediate results
