@@ -78,7 +78,7 @@ class depthDatasetMemory(Dataset):
         # Create list of filenames
         self._datalist_rgb = []
         self._datalist_label = []
-        self._extension_input = '.jpg'  # The file extension of input images
+        self._extension_input = '.exr'  # The file extension of input images
         self._extension_label = '.exr'  # The file extension of labels
         self._create_lists_filenames(self.rgb_dir, self.labels_dir)
 
@@ -88,6 +88,7 @@ class depthDatasetMemory(Dataset):
 
         if self.input_type == 'normal':
             image = api_utils.exr_loader(self._datalist_rgb[idx])
+            image = (image + 1) / 2.0
             image = image.transpose(1, 2, 0)
             image = cv2.resize(image, (640, 480), interpolation=cv2.INTER_NEAREST)
         elif self.input_type == 'rgb':
@@ -201,11 +202,11 @@ def getDefaultTrainTransform(input_type='rgb'):
 def getTrainingTestingData(input_type, activity, rgb_dir, labels_dir):
 
     if activity == 'train':
-        transformed_training = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getDefaultTrainTransform())
+        transformed_training = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getDefaultTrainTransform(input_type=input_type))
         return transformed_training
 
     elif activity == 'eval':
-        transformed_testing = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getNoTransform(input_type))
+        transformed_testing = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getNoTransform(input_type=input_type))
         return transformed_testing
 
 
