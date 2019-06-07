@@ -120,7 +120,6 @@ def main():
     train_loader_list = []
     test_loader_list = []
     for dataset in config.train.datasetsTrain:
-<<<<<<< HEAD
         train_data = getTrainingTestingData('rgb', 'train', dataset.images, dataset.labels)
         train_loader_list.append(train_data)
 
@@ -134,11 +133,6 @@ def main():
     print(len(torch.utils.data.ConcatDataset(train_loader_list)))
     print(len(train_loader))
     print(len(test_loader))
-=======
-        train_loader = getTrainingTestingData('rgb', 'train', dataset.images, dataset.labels, batch_size=batch_size)
-    for dataset in config.train.datasetsVal:
-        test_loader = getTrainingTestingData('rgb', 'eval', dataset.images, dataset.labels, batch_size=batch_size)
->>>>>>> 2965f9d7363a5e58d8c689ce7c7ccbdf2540b63c
 
     # Create a tensorboard object and Write config to tensorboard
     writer = SummaryWriter(MODEL_LOG_DIR, comment='create-graph')
