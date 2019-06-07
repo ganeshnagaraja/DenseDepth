@@ -188,14 +188,14 @@ class ToTensor(object):
         else:
             return img
 
-def getNoTransform(is_test=False):
+def getNoTransform(is_test=False, input_type='rgb'):
     return transforms.Compose([
-        ToTensor(is_test=is_test)
+        ToTensor(is_test=is_test, input_type=input_type)
     ])
 
-def getDefaultTrainTransform():
+def getDefaultTrainTransform(input_type='rgb'):
     return transforms.Compose([
-        ToTensor()
+        ToTensor(input_type=input_type)
     ])
 
 def getTrainingTestingData(input_type, activity, rgb_dir, labels_dir):
@@ -205,7 +205,7 @@ def getTrainingTestingData(input_type, activity, rgb_dir, labels_dir):
         return transformed_training
 
     elif activity == 'eval':
-        transformed_testing = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getNoTransform())
+        transformed_testing = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getNoTransform(input_type))
         return transformed_testing
 
 
