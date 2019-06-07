@@ -70,14 +70,15 @@ def loadZipToMem(zip_file):
     return data, nyu2_train
 
 class depthDatasetMemory(Dataset):
-    def __init__(self, rgb_dir, labels_dir, transform=None):
+    def __init__(self, input_type, rgb_dir, labels_dir, transform=None):
         self.rgb_dir = rgb_dir
         self.labels_dir = labels_dir
         self.transform = transform
+        self.input_type = input_type
         # Create list of filenames
         self._datalist_rgb = []
         self._datalist_label = []
-        self._extension_input = '.exr'  # The file extension of input images
+        self._extension_input = '.jpg'  # The file extension of input images
         self._extension_label = '.exr'  # The file extension of labels
         self._create_lists_filenames(self.rgb_dir, self.labels_dir)
 
@@ -85,14 +86,12 @@ class depthDatasetMemory(Dataset):
         # Open input imgs
         label_path = self._datalist_label[idx]
 
-        # sample = self.nyu_dataset[idx]
-        image = api_utils.exr_loader(self._datalist_rgb[idx])
-        image = image.transpose(1, 2, 0)
-        image = cv2.resize(image, (640, 480), interpolation=cv2.INTER_NEAREST)
-
-        # image = image.transpose(1, 0, 2)
-        # print(image.shape, image.max(), image.min())
-        # image = Image.open(self._datalist_rgb[idx])
+        if self.input_type == 'normal':
+            image = api_utils.exr_loader(self._datalist_rgb[idx])
+            image = image.transpose(1, 2, 0)
+            image = cv2.resize(image, (640, 480), interpolation=cv2.INTER_NEAREST)
+        elif self.input_type == 'rgb':
+            image = Image.open(self._datalist_rgb[idx])
 
         depth = api_utils.exr_loader(label_path, ndim=1)  # Image.open( BytesIO(self.data[sample[1]]) )
         depth = np.clip(depth, 0.0, 3.0)
@@ -107,7 +106,7 @@ class depthDatasetMemory(Dataset):
         return len(self._datalist_label)
 
     def _create_lists_filenames(self, rgb_dir, labels_dir):
-        assert os.path.isdir(rgb_dir), 'Dataloader given images directory that does not exist: "%s"' % (normals_dir)
+        assert os.path.isdir(rgb_dir), 'Dataloader given images directory that does not exist: "%s"' % (rgb_dir)
         assert os.path.isdir(labels_dir), 'Dataloader given labels directory that does not exist: "%s"' % (labels_dir)
 
         # make list of  normals files
@@ -133,13 +132,15 @@ class depthDatasetMemory(Dataset):
 
 
 class ToTensor(object):
-    def __init__(self,is_test=False):
+    def __init__(self,is_test=False, input_type='rgb'):
         self.is_test = is_test
+        self.input_type = input_type
 
     def __call__(self, sample):
         image, depth = sample['image'], sample['depth']
 
-        # image = image.resize((640, 480))
+        if self.input_type == 'rgb':
+            image = image.resize((640, 480))
         image = self.to_tensor(image)
 
         depth = depth.resize((320, 240))
@@ -197,19 +198,14 @@ def getDefaultTrainTransform():
         ToTensor()
     ])
 
-def getTrainingTestingData(activity, rgb_dir, labels_dir, batch_size):
+def getTrainingTestingData(input_type, activity, rgb_dir, labels_dir):
 
     if activity == 'train':
-        transformed_training = depthDatasetMemory(rgb_dir, labels_dir, transform=getDefaultTrainTransform())
-        return DataLoader(transformed_training, batch_size, shuffle=True)
+        transformed_training = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getDefaultTrainTransform())
+        return transformed_training
 
     elif activity == 'eval':
-        transformed_testing = depthDatasetMemory(rgb_dir, labels_dir, transform=getNoTransform())
-        return DataLoader(transformed_testing, batch_size, shuffle=False)
+        transformed_testing = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getNoTransform())
+        return transformed_testing
 
-    # rgb_dir_train = 'data/datasets/val/stemless-plastic-champagne-glasses-lying-flat-val/source-files/camera-normals' 
-    # labels_dir_train = 'data/datasets/val/stemless-plastic-champagne-glasses-lying-flat-val/source-files/depth-imgs-rectified'
-
-    # rgb_dir_val = 'data/datasets/val/stemless-plastic-champagne-glasses-lying-flat-val/source-files/camera-normals'
-    # labels_dir_val = 'data/datasets/val/stemless-plastic-champagne-glasses-lying-flat-val/source-files/depth-imgs-rectified'
 

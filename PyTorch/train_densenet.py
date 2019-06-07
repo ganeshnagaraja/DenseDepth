@@ -1,26 +1,25 @@
-import time
 import argparse
 import datetime
+import glob
+import io
+import os
+import shutil
+import time
 
+import oyaml
 import torch
 import torch.nn as nn
 import torch.nn.utils as utils
 import torchvision.utils as vutils
-from tensorboardX import SummaryWriter
-
-from model import Model
-from loss import ssim
-from data import getTrainingTestingData
-from utils import AverageMeter, DepthNorm, colorize
-
-from termcolor import colored
-import oyaml
 from attrdict import AttrDict
-import os
-import shutil
+from data import getTrainingTestingData
+from loss import ssim
+from model import Model
 from tensorboardX import SummaryWriter
-import glob
-import io
+from termcolor import colored
+from utils import AverageMeter, DepthNorm, colorize
+from torch.utils.data import DataLoader, Dataset
+
 
 def main():
     # Arguments
@@ -118,13 +117,23 @@ def main():
     prefix = 'densenet_' + str(batch_size)
 
     # Load data
+    train_loader_list = []
+    test_loader_list = []
     for dataset in config.train.datasetsTrain:
-        train_loader = getTrainingTestingData('train', dataset.normals, dataset.labels, batch_size=batch_size)
-    for dataset in config.train.datasetsVal:
-        test_loader = getTrainingTestingData('eval', dataset.normals, dataset.labels, batch_size=batch_size)
+        train_data = getTrainingTestingData('rgb', 'train', dataset.images, dataset.labels)
+        train_loader_list.append(train_data)
 
-    # Logging
-    # writer = SummaryWriter(comment='{}-lr{}-e{}-bs{}'.format(prefix, config.train.optimAdam.learningRate, config.train.numEpochs, batch_size), flush_secs=30)
+    for dataset in config.train.datasetsVal:
+        print(dataset.images)
+        test_data = getTrainingTestingData('rgb', 'eval', dataset.images, dataset.labels)
+        test_loader_list.append(test_data)
+
+    train_loader = DataLoader(torch.utils.data.ConcatDataset(train_loader_list), batch_size, num_workers=config.train.numWorkers, shuffle=True, drop_last=True, pin_memory=True)
+    test_loader = DataLoader(torch.utils.data.ConcatDataset(test_loader_list), batch_size, num_workers=config.train.numWorkers, shuffle=False, drop_last=True, pin_memory=True)
+    print(len(torch.utils.data.ConcatDataset(train_loader_list)))
+    print(len(train_loader))
+    print(len(test_loader))
+
     # Create a tensorboard object and Write config to tensorboard
     writer = SummaryWriter(MODEL_LOG_DIR, comment='create-graph')
 
