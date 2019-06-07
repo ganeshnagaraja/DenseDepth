@@ -198,6 +198,7 @@ def getDefaultTrainTransform():
         ToTensor()
     ])
 
+<<<<<<< HEAD
 def getTrainingTestingData(input_type, activity, rgb_dir, labels_dir):
 
     if activity == 'train':
@@ -207,5 +208,16 @@ def getTrainingTestingData(input_type, activity, rgb_dir, labels_dir):
     elif activity == 'eval':
         transformed_testing = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getNoTransform())
         return transformed_testing
+=======
+def getTrainingTestingData(input_type, activity, rgb_dir, labels_dir, batch_size):
+
+    if activity == 'train':
+        transformed_training = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getDefaultTrainTransform())
+        return DataLoader(transformed_training, batch_size, shuffle=True)
+
+    elif activity == 'eval':
+        transformed_testing = depthDatasetMemory(input_type, rgb_dir, labels_dir, transform=getNoTransform())
+        return DataLoader(transformed_testing, batch_size, shuffle=False)
+>>>>>>> 2965f9d7363a5e58d8c689ce7c7ccbdf2540b63c
 
 
