@@ -1,26 +1,24 @@
-import time
 import argparse
 import datetime
+import glob
+import io
+import os
+import shutil
+import time
 
+import oyaml
 import torch
 import torch.nn as nn
 import torch.nn.utils as utils
 import torchvision.utils as vutils
-from tensorboardX import SummaryWriter
-
-from model import Model
-from loss import ssim
+from attrdict import AttrDict
 from data import getTrainingTestingData
+from loss import ssim
+from model import Model
+from tensorboardX import SummaryWriter
+from termcolor import colored
 from utils import AverageMeter, DepthNorm, colorize
 
-from termcolor import colored
-import oyaml
-from attrdict import AttrDict
-import os
-import shutil
-from tensorboardX import SummaryWriter
-import glob
-import io
 
 def main():
     # Arguments
@@ -119,12 +117,10 @@ def main():
 
     # Load data
     for dataset in config.train.datasetsTrain:
-        train_loader = getTrainingTestingData('train', dataset.normals, dataset.labels, batch_size=batch_size)
+        train_loader = getTrainingTestingData('rgb', 'train', dataset.images, dataset.labels, batch_size=batch_size)
     for dataset in config.train.datasetsVal:
-        test_loader = getTrainingTestingData('eval', dataset.normals, dataset.labels, batch_size=batch_size)
+        test_loader = getTrainingTestingData('rgb', 'eval', dataset.images, dataset.labels, batch_size=batch_size)
 
-    # Logging
-    # writer = SummaryWriter(comment='{}-lr{}-e{}-bs{}'.format(prefix, config.train.optimAdam.learningRate, config.train.numEpochs, batch_size), flush_secs=30)
     # Create a tensorboard object and Write config to tensorboard
     writer = SummaryWriter(MODEL_LOG_DIR, comment='create-graph')
 
