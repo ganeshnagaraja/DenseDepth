@@ -1,12 +1,14 @@
 '''Functions for reading and saving EXR images using OpenEXR.
 '''
 import struct
-import numpy as np
+import math
+
 import cv2
 import Imath
+import numpy as np
 import OpenEXR
-from PIL import Image
 import torch
+from PIL import Image
 from torchvision.utils import make_grid
 
 
@@ -365,3 +367,22 @@ def write_point_cloud(filename, color_image, depth_image, fx, fy, cx, cy):
                 bytearray(
                     struct.pack("fffccc", xyz_points[i, 0], xyz_points[i, 1], xyz_points[i, 2],
                                 rgb_points[i, 0].tostring(), rgb_points[i, 1].tostring(), rgb_points[i, 2].tostring())))
+
+def get_focal_len_pixels(height, width, fov_x=69.4, fov_y=42.56):
+    """Calculate the focal length in pixels given the Field of View (FoV) in degrees and image dimensions
+
+    Args:
+        fov_x (float): FOV in x-axis (width), in degrees
+        fov_y (float): FOV in y-axis (height), in degrees
+        height (int): Height of image in pixels
+        width (int): Width of image in pixels
+
+    Returns:
+        float: Fx = Focal len in pixels along x-axis (width)
+        float: Fy = Focal len in pixels along y-axis (height)
+    """
+
+    fx = (width / 2) / (math.tan(math.radians(fov_x / 2)))
+    fy = (height / 2) / (math.tan(math.radians(fov_y / 2)))
+
+    return fx, fy

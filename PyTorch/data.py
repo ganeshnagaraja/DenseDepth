@@ -78,7 +78,7 @@ class depthDatasetMemory(Dataset):
         # Create list of filenames
         self._datalist_rgb = []
         self._datalist_label = []
-        self._extension_input = '.exr'  # The file extension of input images
+        self._extension_input = '.jpg'  # The file extension of input images
         self._extension_label = '.exr'  # The file extension of labels
         self._create_lists_filenames(self.rgb_dir, self.labels_dir)
 
