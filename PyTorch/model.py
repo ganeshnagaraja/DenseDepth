@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class UpSample(nn.Sequential):
     def __init__(self, skip_input, output_features):
-        super(UpSample, self).__init__()        
+        super(UpSample, self).__init__()
         self.convA = nn.Conv2d(skip_input, output_features, kernel_size=3, stride=1, padding=1)
         self.leakyreluA = nn.LeakyReLU(0.2)
         self.convB = nn.Conv2d(output_features, output_features, kernel_size=3, stride=1, padding=1)
@@ -12,7 +12,7 @@ class UpSample(nn.Sequential):
 
     def forward(self, x, concat_with):
         up_x = F.interpolate(x, size=[concat_with.size(2), concat_with.size(3)], mode='bilinear', align_corners=True)
-        return self.leakyreluB( self.convB( self.leakyreluA(self.convA( torch.cat([up_x, concat_with], dim=1) ) ) )  )
+        return self.leakyreluB( self.convB( self.leakyreluA(self.convA( torch.cat([up_x, concat_with], dim=1) ) ) ) )
 
 class Decoder(nn.Module):
     def __init__(self, num_features=2208, decoder_width = 0.5):

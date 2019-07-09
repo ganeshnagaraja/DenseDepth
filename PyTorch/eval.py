@@ -74,41 +74,30 @@ if not os.path.isdir(DIR_RESULTS_SYNTHETIC):
     os.makedirs(DIR_RESULTS_SYNTHETIC)
 
 ###################### DataLoader #############################
-# Make new dataloaders for each synthetic dataset
+# Make new dataloaders for each synthetic/real dataset
 
 ######DenseNet###########
 db_test_list_synthetic = []
+if config.eval.datasetsSynthetic is not None:
+    for dataset in config.eval.datasetsSynthetic:
+        if dataset.images:
+            test_data = getTrainingTestingData('rgb', 'train', dataset.images, dataset.labels)
+            db_test_list_synthetic.append(test_data)
 
-for dataset in config.eval.datasetsSynthetic:
-    print(dataset.images)
-    test_data = getTrainingTestingData('rgb', 'train', dataset.images, dataset.labels)
-    db_test_list_synthetic.append(test_data)
+    test_loader_synthetic = DataLoader(torch.utils.data.ConcatDataset(db_test_list_synthetic), config.eval.batchSize, num_workers=config.eval.numWorkers, shuffle=False, drop_last=False, pin_memory=True)
 
-test_loader_synthetic = DataLoader(torch.utils.data.ConcatDataset(db_test_list_synthetic), config.eval.batchSize, num_workers=config.train.numWorkers, shuffle=False, drop_last=True, pin_memory=True)
-print('len test_loader_synthetic:', len(test_loader_synthetic))
-#######################
-# Make new dataloaders for each real dataset
 db_test_list_real = []
-# if config.eval.datasetsReal is not None:
-#     for dataset in config.eval.datasetsReal:
-#         if dataset.images:
-#             db = dataloader.DepthDataset(
-#                 input_dir=dataset.images,
-#                 transform=augs_test
-#             )
-#             db_test_list_real.append(db)
+if config.eval.datasetsReal is not None:
+    for dataset in config.eval.datasetsReal:
+        if dataset.images:
+            test_data = getTrainingTestingData('rgb', 'train', dataset.images, dataset.labels)
+            db_test_list_real.append(test_data)
+
+    test_loader_real = DataLoader(torch.utils.data.ConcatDataset(db_test_list_real), config.eval.batchSize, num_workers=config.eval.numWorkers, shuffle=False, drop_last=False, pin_memory=True)
 
 if len(db_test_list_synthetic) + len(db_test_list_real) == 0:
     raise ValueError('No valid datasets provided to run inference on!')
 
-
-# if db_test_list_real:
-#     db_test_real = torch.utils.data.ConcatDataset(db_test_list_real)
-#     testLoader_real = DataLoader(db_test_real,
-#                                  batch_size=config.eval.batchSize,
-#                                  shuffle=False,
-#                                  num_workers=config.eval.numWorkers,
-#                                  drop_last=False)
 
 ###################### ModelBuilder #############################
 if config.eval.model == 'deeplab_xception':
@@ -152,8 +141,9 @@ print('Results will be saved to:\n    {}\n    {}\n'.format(config.eval.resultsDi
 
 dataloaders_dict = {}
 if db_test_list_real:
-    dataloaders_dict.update({'real': testLoader_real})
+    dataloaders_dict.update({'real': test_loader_real})
 if db_test_list_synthetic:
+    print('WARNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN')
     dataloaders_dict.update({'synthetic': test_loader_synthetic})
 
 for key in dataloaders_dict:
@@ -236,7 +226,7 @@ for key in dataloaders_dict:
             output_rgb = api_utils.depth2rgb(output, config.train.min_depth,
                                                         config.train.max_depth)
             label_rgb = api_utils.depth2rgb(label, config.train.min_depth, config.train.max_depth)
-            # normals_rgb = api_utils.normal_to_rgb(normals, 'uint8')
+
 
             numpy_grid = np.concatenate((input, output_rgb, label_rgb), axis=1)
             imageio.imwrite(result_path, numpy_grid)

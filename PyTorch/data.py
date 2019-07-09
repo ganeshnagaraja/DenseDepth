@@ -84,8 +84,6 @@ class depthDatasetMemory(Dataset):
 
     def __getitem__(self, idx):
         # Open input imgs
-        label_path = self._datalist_label[idx]
-
         if self.input_type == 'normal':
             image = api_utils.exr_loader(self._datalist_rgb[idx])
             image = (image + 1) / 2.0
@@ -94,17 +92,21 @@ class depthDatasetMemory(Dataset):
         elif self.input_type == 'rgb':
             image = Image.open(self._datalist_rgb[idx])
 
-        depth = api_utils.exr_loader(label_path, ndim=1)  # Image.open( BytesIO(self.data[sample[1]]) )
-        depth = np.clip(depth, 0.0, 3.0)
-        depth = ((depth / 3.0) * 255).astype(np.uint8)
-        depth = Image.fromarray(depth)
+        if self.labels_dir:
+            depth = api_utils.exr_loader(self._datalist_label[idx], ndim=1)  # Image.open( BytesIO(self.data[sample[1]]) )
+            depth = np.clip(depth, 0.0, 3.0)
+            depth = ((depth / 3.0) * 255).astype(np.uint8)
+            depth = Image.fromarray(depth)
 
-        sample = {'image': image, 'depth': depth}
-        if self.transform: sample = self.transform(sample)
+            sample = {'image': image, 'depth': depth}
+            if self.transform: sample = self.transform(sample)
+        else:
+            print('hello')
+            depth = torch.zeros((1, _img_tensor.shape[1], _img_tensor.shape[2]), dtype=torch.float32)
         return sample
 
     def __len__(self):
-        return len(self._datalist_label)
+        return len(self._datalist_rgb)
 
     def _create_lists_filenames(self, rgb_dir, labels_dir):
         assert os.path.isdir(rgb_dir), 'Dataloader given images directory that does not exist: "%s"' % (rgb_dir)

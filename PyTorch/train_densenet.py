@@ -120,12 +120,12 @@ def main():
     train_loader_list = []
     test_loader_list = []
     for dataset in config.train.datasetsTrain:
-        train_data = getTrainingTestingData('normal', 'train', dataset.normals, dataset.labels)
+        train_data = getTrainingTestingData('rgb', 'train', dataset.images, dataset.labels)
         train_loader_list.append(train_data)
 
     for dataset in config.train.datasetsVal:
         print(dataset.images)
-        test_data = getTrainingTestingData('normal', 'eval', dataset.normals, dataset.labels)
+        test_data = getTrainingTestingData('rgb', 'eval', dataset.images, dataset.labels)
         test_loader_list.append(test_data)
 
     train_loader = DataLoader(torch.utils.data.ConcatDataset(train_loader_list), batch_size, num_workers=config.train.numWorkers, shuffle=True, drop_last=True, pin_memory=True)
