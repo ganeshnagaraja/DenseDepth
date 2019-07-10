@@ -17,7 +17,7 @@ from loss import ssim
 from model import Model
 from tensorboardX import SummaryWriter
 from termcolor import colored
-from utils import AverageMeter, DepthNorm, colorize
+from utils import AverageMeter, DepthNorm, colorize, compute_errors
 from torch.utils.data import DataLoader, Dataset
 
 
@@ -209,6 +209,11 @@ def main():
         epoch_loss = running_loss / (len(train_loader))
         writer.add_scalar('data/Train Epoch Loss', epoch_loss, total_iter_num)
         print('\nTrain Epoch Loss: {:.4f}'.format(epoch_loss))
+
+        metrics = compute_errors(depth_n, output)
+        print(metrics)
+        for keys, values in metrics.items():
+            print(str(keys) + ':' + str(values))
 
         # Record epoch's intermediate results
         LogProgress(model, writer, test_loader, niter)

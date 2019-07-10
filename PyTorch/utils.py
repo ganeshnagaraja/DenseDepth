@@ -3,6 +3,9 @@ import matplotlib.cm
 import numpy as np
 from api import utils as api_utils
 import json
+import numpy as np
+import torch
+import torch.nn as nn
 
 def DepthNorm(depth, maxDepth=1000.0): 
     return maxDepth / depth
@@ -94,3 +97,36 @@ def get_mask(variant_mask_path, json_path):
         final_mask += mask
 
     return final_mask
+
+def compute_errors(gt, pred):
+    """
+    Parameters
+    ----------
+    gt : torch.Tensor
+        shape [batch, h, w]
+    pred : torch.Tensor
+        shape [batch, h, w]
+
+    Return
+    ------
+    measures : dict
+    """
+    safe_log = lambda x: torch.log(torch.clamp(x, 1e-6, 1e6))
+    safe_log10 = lambda x: torch.log(torch.clamp(x, 1e-6, 1e6))
+    batch_size = pred.shape[0]
+    mask = gt > 0
+    gt = gt[mask]
+    pred = pred[mask]
+    thresh = torch.max(gt / pred, pred / gt)
+    a1 = (thresh < 1.25).float().mean() * batch_size
+    a2 = (thresh < 1.25 ** 2).float().mean() * batch_size
+    a3 = (thresh < 1.25 ** 3).float().mean() * batch_size
+
+    rmse = ((gt - pred) ** 2).mean().sqrt() * batch_size
+    rmse_log = ((safe_log(gt) - safe_log(pred))** 2).mean().sqrt() * batch_size
+    log10 = (safe_log10(gt) - safe_log10(pred)).abs().mean() * batch_size
+    abs_rel = ((gt - pred).abs() / gt).mean() * batch_size
+    sq_rel = ((gt - pred)**2 / gt).mean() * batch_size
+    measures = {'a1': a1, 'a2': a2, 'a3': a3, 'rmse': rmse,
+                'rmse_log': rmse_log, 'log10': log10, 'abs_rel': abs_rel, 'sq_rel': sq_rel}
+    return measures
