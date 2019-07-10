@@ -116,7 +116,7 @@ train:
 
  # Training/Validation Params
   model: 'rednet' # Possible values - [ 'rednet', 'deeplab_xception', 'deeplab_resnet']
-  batchSize: 32
+  batchSize: 24
   numEpochs: 500
   imgHeight: 256
   imgWidth: 256
