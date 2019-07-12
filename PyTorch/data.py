@@ -149,4 +149,4 @@ def getTrainingTestingData(batch_size):
     transformed_training = depthDatasetMemory(data, nyu2_train, transform=getDefaultTrainTransform())
     transformed_testing = depthDatasetMemory(data, nyu2_train, transform=getNoTransform())
 
-    return DataLoader(transformed_training, batch_size, shuffle=True), DataLoader(transformed_testing, batch_size, shuffle=False)
+    return DataLoader(transformed_training, batch_size, shuffle=True, num_workers=32, pin_memory=True), DataLoader(transformed_testing, batch_size, shuffle=False, num_workers=32, pin_memory=True)
