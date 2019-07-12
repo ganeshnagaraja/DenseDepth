@@ -1,12 +1,15 @@
 import time
 import argparse
 import datetime
+import glob
+import os
 
 import torch
 import torch.nn as nn
 import torch.nn.utils as utils
 import torchvision.utils as vutils
 from tensorboardX import SummaryWriter
+from termcolor import colored
 
 from model import Model
 from loss import ssim
@@ -20,6 +23,14 @@ def main():
     parser.add_argument('--lr', '--learning-rate', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--bs', default=4, type=int, help='batch size')
     args = parser.parse_args()
+
+    # Create a new directory to save logs
+    runs = sorted(glob.glob(os.path.join('logs', 'exp-*')))
+    prev_run_id = int(runs[-1].split('-')[-1]) if runs else 0
+    MODEL_LOG_DIR = os.path.join('logs', 'exp-{:03d}'.format(prev_run_id + 1))
+    CHECKPOINT_DIR = os.path.join(MODEL_LOG_DIR, 'checkpoints')
+    os.makedirs(CHECKPOINT_DIR)
+    print('Saving logs to folder: ' + colored('"{}"'.format(MODEL_LOG_DIR), 'blue'))
 
     # Create model
     model = Model().cuda()
@@ -58,7 +69,7 @@ def main():
             depth = torch.autograd.Variable(sample_batched['depth'].cuda(non_blocking=True))
 
             # Normalize depth
-            depth_n = DepthNorm( depth )
+            depth_n = DepthNorm(depth)
 
             # Predict
             output = model(image)
@@ -78,7 +89,7 @@ def main():
             batch_time.update(time.time() - end)
             end = time.time()
             eta = str(datetime.timedelta(seconds=int(batch_time.val*(N - i))))
-
+        
             # Log progress
             niter = epoch*N+i
             if i % 5 == 0:
@@ -92,12 +103,28 @@ def main():
                 # Log to tensorboard
                 writer.add_scalar('Train/Loss', losses.val, niter)
 
-            if i % 50 == 0:
+            if i % 300 == 0:
                 LogProgress(model, writer, test_loader, niter)
 
         # Record epoch's intermediate results
         LogProgress(model, writer, test_loader, niter)
         writer.add_scalar('Train/Loss.avg', losses.avg, epoch)
+
+        # Save the model checkpoint every N epochs
+        saveModelInterval = 2
+        if (epoch % saveModelInterval) == 0:
+            filename = os.path.join(CHECKPOINT_DIR, 'checkpoint-epoch-{:04d}.pth'.format(epoch))
+            if torch.cuda.device_count() > 1:
+                model_params = model.module.state_dict()  # Saving nn.DataParallel model
+            else:
+                model_params = model.state_dict()
+
+            torch.save(
+                {
+                    'model_state_dict': model_params,
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'epoch': epoch
+                }, filename)
 
 def LogProgress(model, writer, test_loader, epoch):
     model.eval()

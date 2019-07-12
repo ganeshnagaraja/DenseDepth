@@ -12,7 +12,7 @@ import torch.nn as nn
 import torch.nn.utils as utils
 import torchvision.utils as vutils
 from attrdict import AttrDict
-from data import getTrainingTestingData
+from data_densenet import getTrainingTestingData
 from loss import ssim
 from model import Model
 from tensorboardX import SummaryWriter
