@@ -11,4 +11,5 @@ PyTorch/runs/
 PyTorch/logs/
 PyTorch/dataloader.py
 PyTorch/config.yaml
-
+nyu_data.zip
+nyu_test.zip

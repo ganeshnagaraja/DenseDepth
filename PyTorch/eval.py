@@ -26,7 +26,7 @@ from tqdm import tqdm
 
 from data import getTrainingTestingData
 from model import Model
-from utils import AverageMeter, DepthNorm, colorize
+from utils import AverageMeter, DepthNorm, colorize, compute_errors
 from loss import ssim
 
 sys.path.append('..')
@@ -181,6 +181,14 @@ for key in dataloaders_dict:
         inputs_tensor = image.detach().cpu()
         output_tensor = outputs.detach().cpu()
         label_tensor = depth_n.detach().cpu()
+
+        depth_metric = depth * (config.train.max_depth / 1000.0)
+        outputs_tmp = DepthNorm(outputs)
+        outputs_metric = outputs_tmp * (config.train.max_depth / 1000.0)
+        metrics = compute_errors(depth_metric, outputs_metric)
+        # print(metrics)
+        for keys, values in metrics.items():
+            print(str(keys) + ': ' + str(values))
 
         # Extract each tensor within batch and save results
         for iii, sample_batched in enumerate(zip(inputs_tensor, output_tensor, label_tensor)):
