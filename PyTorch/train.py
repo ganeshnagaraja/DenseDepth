@@ -33,8 +33,18 @@ def main():
     print('Saving logs to folder: ' + colored('"{}"'.format(MODEL_LOG_DIR), 'blue'))
 
     # Create model
-    model = Model().cuda()
+    model = Model()
     print('Model created.')
+
+    # Enable Multi-GPU training
+    print("Let's use", torch.cuda.device_count(), "GPUs!")
+    if torch.cuda.device_count() > 1:
+        print('Multiple GPUs being used, can\'t save model graph to Tensorboard')
+        # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+        model = nn.DataParallel(model)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
 
     # Training parameters
     optimizer = torch.optim.Adam( model.parameters(), args.lr )
