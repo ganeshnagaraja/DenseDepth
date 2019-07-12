@@ -55,7 +55,8 @@ def main():
     train_loader, test_loader = getTrainingTestingData(batch_size=batch_size)
 
     # Logging
-    writer = SummaryWriter(comment='{}-lr{}-e{}-bs{}'.format(prefix, args.lr, args.epochs, args.bs), flush_secs=30)
+    # writer = SummaryWriter(comment='{}-lr{}-e{}-bs{}'.format(prefix, args.lr, args.epochs, args.bs), flush_secs=30)
+    writer = SummaryWriter(MODEL_LOG_DIR, comment='create-graph')
 
     # Loss
     l1_criterion = nn.L1Loss()
@@ -99,7 +100,7 @@ def main():
             batch_time.update(time.time() - end)
             end = time.time()
             eta = str(datetime.timedelta(seconds=int(batch_time.val*(N - i))))
-        
+
             # Log progress
             niter = epoch*N+i
             if i % 5 == 0:
@@ -150,6 +151,7 @@ def LogProgress(model, writer, test_loader, epoch):
     del image
     del depth
     del output
+    model.train()
 
 if __name__ == '__main__':
     main()
